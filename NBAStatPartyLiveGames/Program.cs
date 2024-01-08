@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using NBAStatParty.Models.SR_Standings;
 using NBAStatPartyLiveGames.Models;
 using NBAStatPartyLiveGames.Models.SRDailySchedule;
 using NBAStatPartyLiveGames.Models.SRPlayByPlay;
@@ -31,13 +32,23 @@ internal class Program
 
             // get an IDatabase here with GetDatabase
             var db = muxer.GetDatabase();
-            var test = db.Ping();
-            Console.WriteLine();
             var services = serviceScope.ServiceProvider;
             var todaysSchedule = new SR_DailySchedule();
             var upcomingGames = new List<Game>();
             var liveGames = new List<Game>();
             var finalGames = new List<Game>();
+            var standings = new SR_Standings();
+            try
+            {
+                var myService = services.GetRequiredService<MyApplication>();
+                standings = await myService.GetStandings();
+                await Task.Delay(1000);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error Occured");
+            }
+            var publisher = new Publisher(standings, db);
             while (true)
             {
                 var today = $"{DateTime.Now.Year}-{DateTime.Now.Month:00}-{DateTime.Now.Day:00}";
@@ -66,6 +77,7 @@ internal class Program
                     {
                         liveGames.Add(game);
                         upcomingGames.Remove(game);
+                        publisher.GameStart(game);
                     }
                 }
 
@@ -91,6 +103,7 @@ internal class Program
                         {
                             finalGames.Add(game);
                             finalGames.Remove(game);
+                            publisher.GameStop(game);
                         }
                     }
                     catch (Exception ex)
