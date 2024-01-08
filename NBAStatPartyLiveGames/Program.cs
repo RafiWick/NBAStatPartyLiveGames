@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using NBAStatPartyLiveGames.Models;
 using NBAStatPartyLiveGames.Models.SRDailySchedule;
 using NBAStatPartyLiveGames.Models.SRPlayByPlay;
+using StackExchange.Redis;
 using static System.Net.Mime.MediaTypeNames;
 
 internal class Program
@@ -17,6 +18,21 @@ internal class Program
         var host = builder.Build();
         using (var serviceScope = host.Services.CreateScope())
         {
+            var options = new ConfigurationOptions
+            {
+                EndPoints = { Environment.GetEnvironmentVariable("REDIS_ENDPOINT", EnvironmentVariableTarget.User) },
+                User = "default",
+                Password = Environment.GetEnvironmentVariable("REDIS_PASSWORD", EnvironmentVariableTarget.User),
+                AbortOnConnectFail = false
+            };
+
+            // initalize a multiplexer with ConnectionMultiplexer.Connect()
+            var muxer = ConnectionMultiplexer.Connect(options);
+
+            // get an IDatabase here with GetDatabase
+            var db = muxer.GetDatabase();
+            var test = db.Ping();
+            Console.WriteLine();
             var services = serviceScope.ServiceProvider;
             var todaysSchedule = new SR_DailySchedule();
             var upcomingGames = new List<Game>();
