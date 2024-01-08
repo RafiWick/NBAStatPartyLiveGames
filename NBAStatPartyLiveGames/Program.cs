@@ -77,7 +77,7 @@ internal class Program
                     {
                         liveGames.Add(game);
                         upcomingGames.Remove(game);
-                        publisher.GameStart(game);
+                        await publisher.GameStart(game);
                     }
                 }
 
@@ -98,18 +98,19 @@ internal class Program
                     {
                         var myService = services.GetRequiredService<MyApplication>();
                         playByPlay = await myService.GetPlayByPlay(game.Id);
-
+                        await publisher.LiveUpdate(playByPlay);
                         if (playByPlay.Status == "closed")
                         {
                             finalGames.Add(game);
                             finalGames.Remove(game);
-                            publisher.GameStop(game);
+                            await publisher.GameStop(game);
                         }
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine("Error Occured");
                     }
+                    
                 }
 
                 await Task.Delay(15000);
