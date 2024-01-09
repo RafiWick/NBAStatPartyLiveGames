@@ -83,15 +83,21 @@ namespace NBAStatPartyLiveGames.Models
             var newEvents = events.Where(e => !Events[pbp.Id].Contains(e.Id)).ToList();
             foreach(var evnt in newEvents)
             {
-                await _db.StreamAddAsync("streams:liveGames:game:" + pbp.Id, new[]
+                var streamEntry = new NameValueEntry[6]
                 {
                     new NameValueEntry("clock", evnt.Clock),
                     new NameValueEntry("Description", evnt.Description),
                     new NameValueEntry("home points", evnt.Home_Points),
                     new NameValueEntry("away points", evnt.Away_Points),
                     new NameValueEntry("event type", evnt.Event_Type),
-                    new NameValueEntry("attribution", $"{evnt.Attribution.Market} { evnt.Attribution.Name}")
-                });
+                    new NameValueEntry("attribution", "")
+                };
+                if (evnt.Attribution != null)
+                {
+                    streamEntry[5] = new NameValueEntry("attribution", $"{evnt.Attribution.Market} {evnt.Attribution.Name}");
+                }
+
+                await _db.StreamAddAsync("streams:liveGames:game:" + pbp.Id, streamEntry);
                 Events[pbp.Id].Add(evnt.Id);
             }
             return true;

@@ -17,6 +17,7 @@ internal class Program
             services.AddTransient<MyApplication>();
         }).UseConsoleLifetime();
         var host = builder.Build();
+        int requestCount = 0;
         using (var serviceScope = host.Services.CreateScope())
         {
             var options = new ConfigurationOptions
@@ -42,6 +43,8 @@ internal class Program
             {
                 var myService = services.GetRequiredService<MyApplication>();
                 standings = await myService.GetStandings();
+                requestCount++;
+                Console.WriteLine(requestCount);
                 await Task.Delay(1000);
             }
             catch (Exception ex)
@@ -59,8 +62,10 @@ internal class Program
                     {
                         var myService = services.GetRequiredService<MyApplication>();
                         todaysSchedule = await myService.GetDailySchedule(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);
-                        upcomingGames = todaysSchedule.Games.Where(g => g.Status == "scheduled").ToList();
-                        liveGames = todaysSchedule.Games.Where(g => g.Status == "inprogress").ToList();
+                        requestCount++;
+                        Console.WriteLine(requestCount);
+                        upcomingGames = todaysSchedule.Games.Where(g => g.Status == "scheduled" || g.Status == "inprogress").ToList();
+                        //liveGames = todaysSchedule.Games.Where(g => g.Status == "inprogress").ToList();
                         finalGames = todaysSchedule.Games.Where(g => g.Status == "closed").ToList();
                         await Task.Delay(1000);
                     }
@@ -76,11 +81,13 @@ internal class Program
                     if (game.Scheduled <= DateTime.UtcNow)
                     {
                         liveGames.Add(game);
-                        upcomingGames.Remove(game);
                         await publisher.GameStart(game);
                     }
                 }
-
+                foreach(Game game in liveGames.Where(g => upcomingGames.Contains(g)))
+                {
+                    upcomingGames.Remove(game);
+                }
                 // get play by play for each live game
                 bool first = true;
                 foreach(Game game in liveGames)
@@ -91,18 +98,19 @@ internal class Program
                     }
                     else
                     {
-                        await Task.Delay(15000);
+                        await Task.Delay(20000);
                     }
                     var playByPlay = new SR_PlayByPlay();
                     try
                     {
                         var myService = services.GetRequiredService<MyApplication>();
                         playByPlay = await myService.GetPlayByPlay(game.Id);
+                        requestCount++;
+                        Console.WriteLine(requestCount);
                         await publisher.LiveUpdate(playByPlay);
                         if (playByPlay.Status == "closed")
                         {
                             finalGames.Add(game);
-                            finalGames.Remove(game);
                             await publisher.GameStop(game);
                         }
                     }
@@ -112,8 +120,11 @@ internal class Program
                     }
                     
                 }
-
-                await Task.Delay(15000);
+                foreach(Game game in finalGames.Where(g => liveGames.Contains(g)))
+                {
+                    liveGames.Remove(game);
+                }
+                await Task.Delay(20000);
             }
         }
 
