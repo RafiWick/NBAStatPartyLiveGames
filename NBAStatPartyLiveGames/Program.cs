@@ -39,6 +39,7 @@ internal class Program
             var liveGames = new List<Game>();
             var finalGames = new List<Game>();
             var standings = new SR_Standings();
+            int d = 5 * 60;
             try
             {
                 var myService = services.GetRequiredService<MyApplication>();
@@ -64,9 +65,9 @@ internal class Program
                         todaysSchedule = await myService.GetDailySchedule(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);
                         requestCount++;
                         Console.WriteLine(requestCount);
-                        upcomingGames = todaysSchedule.Games.Where(g => g.Status == "scheduled" || g.Status == "inprogress").ToList();
+                        upcomingGames = todaysSchedule.Games;//.Where(g => g.Status == "scheduled").ToList();
                         //liveGames = todaysSchedule.Games.Where(g => g.Status == "inprogress").ToList();
-                        finalGames = todaysSchedule.Games.Where(g => g.Status == "closed").ToList();
+                        //finalGames = todaysSchedule.Games.Where(g => g.Status == "closed").ToList();
                         await Task.Delay(1000);
                     }
                     catch (Exception ex)
@@ -98,7 +99,7 @@ internal class Program
                     }
                     else
                     {
-                        await Task.Delay(20000);
+                        await Task.Delay(4000);
                     }
                     var playByPlay = new SR_PlayByPlay();
                     try
@@ -124,7 +125,7 @@ internal class Program
                 {
                     liveGames.Remove(game);
                 }
-                await Task.Delay(20000);
+                await Task.Delay(d * 1000);
             }
         }
 

@@ -23,6 +23,7 @@ namespace NBAStatPartyLiveGames.Models.SRPlayByPlay
         public Location? Location { get; set; }
         public Possession? Possession { get; set; }
         public OnCourt On_Court { get; set; }
-        public List<Statistic> Statistics { get; set; }
+        public List<Statistic> Statistics { get; set; } = new List<Statistic>();
+
     }
 }
